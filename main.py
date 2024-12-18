@@ -13,6 +13,8 @@ class SnapScribe:
         self.current_image_index = 0
         self.watermark_text = tk.StringVar()
         self.font_size = tk.IntVar(value=200)
+        self.cancel_flag = False
+        self.progress_window = None
         self.create_widgets()
 
     def create_widgets(self):
@@ -23,7 +25,7 @@ class SnapScribe:
 
         ttk.Label(self.root, text="Wpisz tekst do dodania:").pack()
         self.text_entry = ttk.Entry(self.root, textvariable=self.watermark_text, width=50)
-        self.text_entry.pack(pady=5)
+        self.text_entry.pack(padx = 10, pady=5)
 
         ttk.Label(self.root, text="Rozmiar czcionki:").pack()
         self.font_size_slider = ttk.Scale(self.root, from_=10, to=500, orient="horizontal", variable=self.font_size, command=self.update_preview)
@@ -40,12 +42,8 @@ class SnapScribe:
         self.replace_var = tk.IntVar()
         ttk.Checkbutton(frame, variable=self.replace_var).pack(side=tk.LEFT)
 
-
         self.apply_button = ttk.Button(self.root, text="Dodaj napis do wszystkich zdjęć", command=self.start_processing_thread)
         self.apply_button.pack(pady=10)
-
-        self.progress_bar = ttk.Progressbar(self.root, orient="horizontal", length=200, mode="determinate")
-        self.progress_bar.pack(pady=10)
 
         self.info_label = ttk.Label(self.root, text="Wybierz folder, aby rozpocząć.")
         self.info_label.pack()
@@ -109,8 +107,55 @@ class SnapScribe:
         self.image_label.config(image=self.tk_image)
 
     def start_processing_thread(self):
+        self.cancel_flag = False
+        self.create_progress_window()
         processing_thread = threading.Thread(target=self.apply_watermark)
         processing_thread.start()
+
+    def create_progress_window(self):
+        self.progress_window = tk.Toplevel(self.root)
+        self.progress_window.title("Postęp przetwarzania")
+
+        # Ustawienie modalności
+        self.progress_window.transient(self.root)
+        self.progress_window.grab_set()
+
+        # Zablokowanie możliwości zmiany rozmiaru okna
+        self.progress_window.resizable(False, False)
+
+        self.center_window(self.progress_window, 400, 150)
+
+        # Pasek postępu
+        self.progress_label = ttk.Label(self.progress_window, text="Przetwarzanie zdjęć...")
+        self.progress_label.pack(pady=10)
+        self.progress_bar = ttk.Progressbar(self.progress_window, orient="horizontal", length=300, mode="determinate")
+        self.progress_bar.pack(padx = 10, pady=10)
+        self.progress_bar["maximum"] = len(self.images_list)
+
+        # Przycisk Anuluj
+        self.cancel_button = ttk.Button(self.progress_window, text="Anuluj", command=self.cancel_processing)
+        self.cancel_button.pack(pady=10)
+
+
+    
+    def center_window(self, window, width, height):
+        """Wyśrodkowuje okno na środku głównego okna."""
+        root_x = self.root.winfo_x()
+        root_y = self.root.winfo_y()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+        x = root_x + (root_width // 2) - (width // 2)
+        y = root_y + (root_height // 2) - (height // 2)
+        window.geometry(f"{width}x{height}+{x}+{y}")
+
+
+    def cancel_processing(self):
+        self.cancel_flag = True
+        if self.progress_window and self.progress_window.winfo_exists():
+            self.progress_window.destroy()
+            self.progress_window = None
+        self.info_label.config(text="Anulowano przetwarzanie.")
+        messagebox.showinfo("Info", "Anulowano przetwarzanie.")
 
     def apply_watermark(self):
         if not self.images_list:
@@ -121,22 +166,37 @@ class SnapScribe:
             save_folder = filedialog.askdirectory(title="Wybierz folder do zapisu zdjęć")
             if not save_folder:
                 messagebox.showinfo("Info", "Nie wybrano folderu do zapisu.")
+                if self.progress_window:
+                    self.progress_window.destroy()
                 return
         else:
             save_folder = self.image_folder
 
-        self.progress_bar["maximum"] = len(self.images_list)
-        self.progress_bar["value"] = 0
+        self.info_label.config(text="Przetwarzanie...")
 
         for index, image_path in enumerate(self.images_list):
+            if self.cancel_flag:  # Sprawdź, czy operacja została anulowana
+                break
+
+            # Aktualizacja etykiety w oknie paska postępu
+            if self.progress_window and self.progress_window.winfo_exists():
+                self.progress_label.config(text=f"Przetwarzanie zdjęć... {index + 1} z {len(self.images_list)}")
+                self.progress_bar["value"] = index + 1
+                self.progress_window.update_idletasks()
+            else:
+                # Okno paska postępu zostało zamknięte
+                break
+
+            # Relatywna ścieżka i przygotowanie folderów
             relative_path = os.path.relpath(image_path, self.image_folder)
             save_path = os.path.join(save_folder, relative_path)
-
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
+            # Otwieranie obrazu
             image = Image.open(image_path)
             draw = ImageDraw.Draw(image)
 
+            # Czcionka i pozycja tekstu
             font_size = self.font_size.get()
             text = self.watermark_text.get()
             try:
@@ -149,19 +209,26 @@ class SnapScribe:
             text_height = font_size
             position = (img_width // 2 - text_width // 2, img_height - text_height - 20)
 
+            # Dodanie znaku wodnego
             overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
             overlay_draw = ImageDraw.Draw(overlay)
             overlay_draw.text(position, text, font=font, fill=(255, 255, 255, 150))
             watermarked_image = Image.alpha_composite(image.convert("RGBA"), overlay)
 
+            # Zapisanie obrazu
             watermarked_image.convert("RGB").save(save_path)
 
-            self.progress_bar["value"] = index + 1
-            self.root.update_idletasks()
-            self.info_label.config(text=f"Przetworzono {index + 1}/{len(self.images_list)} zdjęć.")
+            if self.progress_window and self.progress_window.winfo_exists():
+                self.progress_bar["value"] = index + 1
+                self.progress_label.config(text=f"Przetwarzanie zdjęć... {index + 1} z {len(self.images_list)}")
+                self.progress_window.update_idletasks()
 
-        messagebox.showinfo("Sukces", f"Dodano napis do {len(self.images_list)} zdjęć.")
-        self.info_label.config(text="Gotowe!")
+        # Zamykanie okna postępu po zakończeniu
+        if not self.cancel_flag:
+            messagebox.showinfo("Sukces", f"Dodano napis do {len(self.images_list)} zdjęć.")
+            self.info_label.config(text="Gotowe!")
+        if self.progress_window:
+            self.progress_window.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
