@@ -73,7 +73,7 @@ class SnapScribe:
         self.info_label = ttk.Label(options_frame, text="Znaleziono 0 zdjęć.", anchor="center")
         self.info_label.grid(row=6, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
-        self.author_label = ttk.Label(options_frame, text="Autor: Michał Kirschniok\nWersja 0.5", anchor="center", compound="center", justify="center")
+        self.author_label = ttk.Label(options_frame, text="Autor: Michał Kirschniok\nWersja 0.6", anchor="center", compound="center", justify="center")
         self.author_label.grid(row=7, column=0, columnspan=2, pady=(10, 0), sticky="ew")
 
         self.root.columnconfigure(0, weight=1)
@@ -211,12 +211,7 @@ class SnapScribe:
             return
 
         if self.create_copy_var.get():
-            save_folder = filedialog.askdirectory(title="Wybierz folder do zapisu zdjęć")
-            if not save_folder:
-                messagebox.showinfo("Info", "Nie wybrano folderu do zapisu.")
-                if self.progress_window:
-                    self.progress_window.destroy()
-                return
+            save_folder = self.image_folder + "_opisane"
         else:
             save_folder = self.image_folder
 
