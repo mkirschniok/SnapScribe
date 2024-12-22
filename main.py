@@ -57,24 +57,28 @@ class SnapScribe:
         self.font_size_entry.insert(0, "200")
         self.font_size_entry.grid(row=2, column=1, pady=5, sticky="ew")
 
+        self.white_var = tk.BooleanVar(value=True)
+        ttk.Radiobutton(options_frame, text="Biały napis", variable=self.white_var, value=True).grid(row=3, column=0, sticky="w")
+        ttk.Radiobutton(options_frame, text="Czarny napis", variable=self.white_var, value=False).grid(row=3, column=1, sticky="w")
+
 
         self.update_preview_button = ttk.Button(options_frame, text="Aktualizuj podgląd")
-        self.update_preview_button.grid(row=3, column=0, columnspan=2, pady=(10, 10), sticky="ew")
+        self.update_preview_button.grid(row=4, column=0, columnspan=2, pady=(10, 10), sticky="ew")
         self.update_preview_button.config(command=self.update_preview)
 
         self.create_copy_var = tk.BooleanVar(value=True)
-        ttk.Radiobutton(options_frame, text="Utwórz kopię zdjęć", variable=self.create_copy_var, value=True).grid(row=4, column=0, sticky="w")
-        ttk.Radiobutton(options_frame, text="Zastąp wszystkie zdjęcia", variable=self.create_copy_var, value=False).grid(row=4, column=1, sticky="w")
+        ttk.Radiobutton(options_frame, text="Utwórz kopię zdjęć", variable=self.create_copy_var, value=True).grid(row=5, column=0, sticky="w")
+        ttk.Radiobutton(options_frame, text="Zastąp wszystkie zdjęcia", variable=self.create_copy_var, value=False).grid(row=5, column=1, sticky="w")
 
         self.process_button = ttk.Button(options_frame, text="Dodaj napis do wszystkich zdjęć")
-        self.process_button.grid(row=5, column=0, columnspan=2, pady=(10, 10), sticky="ew")
+        self.process_button.grid(row=6, column=0, columnspan=2, pady=(10, 10), sticky="ew")
         self.process_button.config(command=self.start_processing_thread)
 
         self.info_label = ttk.Label(options_frame, text="Znaleziono 0 zdjęć.", anchor="center")
-        self.info_label.grid(row=6, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+        self.info_label.grid(row=7, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
-        self.author_label = ttk.Label(options_frame, text="Autor: Michał Kirschniok\nWersja 0.6", anchor="center", compound="center", justify="center")
-        self.author_label.grid(row=7, column=0, columnspan=2, pady=(10, 0), sticky="ew")
+        self.author_label = ttk.Label(options_frame, text="Autor: Michał Kirschniok\nWersja 0.7", anchor="center", compound="center", justify="center")
+        self.author_label.grid(row=8, column=0, columnspan=2, pady=(10, 0), sticky="ew")
 
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -87,6 +91,7 @@ class SnapScribe:
         options_frame.rowconfigure(5, weight=1)
         options_frame.rowconfigure(6, weight=1)
         options_frame.rowconfigure(7, weight=1)
+        options_frame.rowconfigure(8, weight=1)
 
 
     def validate_font_size(self, value_if_allowed):
@@ -142,7 +147,10 @@ class SnapScribe:
 
             overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
             overlay_draw = ImageDraw.Draw(overlay)
-            overlay_draw.text(position, text, font=font, fill=(255, 255, 255, 150))
+            if self.white_var.get():
+                overlay_draw.text(position, text, font=font, fill=(255, 255, 255, 150))
+            else:
+                overlay_draw.text(position, text, font=font, fill=(0, 0, 0, 150))
             image = Image.alpha_composite(image.convert("RGBA"), overlay)
             image.thumbnail((400, 300))
             self.tk_image = ImageTk.PhotoImage(image)
@@ -257,7 +265,10 @@ class SnapScribe:
 
             overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
             overlay_draw = ImageDraw.Draw(overlay)
-            overlay_draw.text(position, text, font=font, fill=(255, 255, 255, 150))
+            if self.white_var.get():
+                overlay_draw.text(position, text, font=font, fill=(255, 255, 255, 150))
+            else:
+                overlay_draw.text(position, text, font=font, fill=(0, 0, 0, 150))
             watermarked_image = Image.alpha_composite(image.convert("RGBA"), overlay)
 
             watermarked_image.convert("RGB").save(save_path)
