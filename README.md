@@ -9,7 +9,7 @@ Dla wersji do pobrania (.exe): system operacyjny Windows 10/11.
 Dla wersji źródłowej: Python 3.8+ oraz biblioteki sys, os, threading, PIL, tkinter.
 
 ### Instrukcja
-1. Pobierz plik SnapScribe.exe z zakładki Releases (lub samodzielnie skompiluj program z plików źródłowych).
+1. Pobierz plik SnapScribe.exe z zakładki Releases (lub samodzielnie skompiluj program z plików źródłowych). **UWAGA! Plik .exe może być błędnie wykrywany jako wirus przez niektóre programy antywirusowe.** Jest to tzw. _false-positive_, program nie zawiera wirusów. Można go dodać do wyjątków w ustawieniach antywirusa.
 2. Uruchom program SnapScribe.exe.
 3. Wybierz katalog, w którym znajdują się zdjęcia, do których chcesz dodać stopkę.
 4. Wybierz kolor tekstu stopki (biały lub czarny).
