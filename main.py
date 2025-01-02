@@ -1,3 +1,9 @@
+###
+# SnapScribe - dodawanie stopki do zdjęć
+# Autor: Michał Kirschniok
+# Wersja: 1.0
+###
+
 import threading
 import sys
 import os
@@ -19,6 +25,7 @@ class SnapScribe:
         self.create_widgets()
         self.root.resizable(False, False)
 
+    # Funkcja do odwoływania się do plików po spakowaniu aplikacji
     def resource_path(self, relative_path):
         try:
             base_path = sys._MEIPASS
@@ -26,6 +33,7 @@ class SnapScribe:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, relative_path)
 
+    # Funkcja do tworzenia interfejsu
     def create_widgets(self):
         main_frame = ttk.Frame(self.root, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -77,28 +85,22 @@ class SnapScribe:
         self.info_label = ttk.Label(options_frame, text="Znaleziono 0 zdjęć.", anchor="center")
         self.info_label.grid(row=7, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
-        self.author_label = ttk.Label(options_frame, text="Autor: Michał Kirschniok\nWersja 0.7", anchor="center", compound="center", justify="center")
+        self.author_label = ttk.Label(options_frame, text="Autor: Michał Kirschniok\nWersja 1.0", anchor="center", compound="center", justify="center")
         self.author_label.grid(row=8, column=0, columnspan=2, pady=(10, 0), sticky="ew")
 
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.rowconfigure(0, weight=1)
-        options_frame.rowconfigure(0, weight=1)
-        options_frame.rowconfigure(1, weight=1)
-        options_frame.rowconfigure(2, weight=1)
-        options_frame.rowconfigure(3, weight=1)
-        options_frame.rowconfigure(4, weight=1)
-        options_frame.rowconfigure(5, weight=1)
-        options_frame.rowconfigure(6, weight=1)
-        options_frame.rowconfigure(7, weight=1)
-        options_frame.rowconfigure(8, weight=1)
+        for i in range(9):
+            options_frame.rowconfigure(i, weight=1)
 
-
+    # Funkcja sprawdzająca poprawność wprowadzonego rozmiaru czcionki
     def validate_font_size(self, value_if_allowed):
         if value_if_allowed == "" or (value_if_allowed.isdigit() and int(value_if_allowed) <= 1000):
             return True
         return False
 
+    # Funkcja do wyboru folderu ze zdjęc
     def choose_folder(self):
         folder = filedialog.askdirectory(title="Wybierz folder ze zdjęciami")
         if folder:
@@ -120,6 +122,7 @@ class SnapScribe:
         else:
             messagebox.showinfo("Info", "Nie wybrano folderu.")
 
+    # Funkcja do wczytywania zdjęcia
     def load_image(self):
         if self.images_list:
             image_path = os.path.join(self.image_folder, self.images_list[self.current_image_index])
@@ -129,7 +132,8 @@ class SnapScribe:
                 messagebox.showerror("Błąd", f"Nie można otworzyć pliku: {image_path}")
                 return
             self.update_preview()
-
+    
+    # Funkcja do aktualizacji podglądu
     def update_preview(self, event=None):
         if hasattr(self, 'original_image'):
             image = self.original_image.copy()
@@ -155,13 +159,15 @@ class SnapScribe:
             image.thumbnail((400, 300))
             self.tk_image = ImageTk.PhotoImage(image)
             self.image_label.config(image=self.tk_image)
-        
+    
+    # Funkcja do uruchomienia wątku przetwarzania
     def start_processing_thread(self):
         self.cancel_flag = False
         self.create_progress_window()
         processing_thread = threading.Thread(target=self.apply_watermark)
         processing_thread.start()
 
+    # Funkcja do tworzenia okna postępu
     def create_progress_window(self):
         self.progress_window = tk.Toplevel(self.root)
         self.progress_window.title("Postęp przetwarzania")
@@ -181,8 +187,7 @@ class SnapScribe:
         self.cancel_button = ttk.Button(self.progress_window, text="Anuluj", command=self.cancel_processing)
         self.cancel_button.pack(pady=10)
 
-
-    
+    # Funkcja do wyśrodkowania okna    
     def center_window(self, window, width, height):
         root_x = self.root.winfo_x()
         root_y = self.root.winfo_y()
@@ -192,7 +197,7 @@ class SnapScribe:
         y = root_y + (root_height // 2) - (height // 2)
         window.geometry(f"{width}x{height}+{x}+{y}")
 
-
+    # Funkcja do anulowania przetwarzania
     def cancel_processing(self):
         self.cancel_flag = True
         if self.progress_window and self.progress_window.winfo_exists():
@@ -201,6 +206,7 @@ class SnapScribe:
         self.info_label.config(text="Anulowano przetwarzanie.")
         messagebox.showinfo("Info", "Anulowano przetwarzanie.")
 
+    # Funkcja dodająca napis do zdjęć
     def apply_watermark(self):
         if not self.images_list:
             messagebox.showerror("Błąd", "Brak zdjęć do przetworzenia.")
